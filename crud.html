@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>alpine ejemplo 1</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js" defer></script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container" x-data="crudAlpine()" x-init="iniciar">
+        <div class="row">
+            <div class="col-md-5">
+                        <br>
+                <div class="card">
+                    <div class="card-header">
+                        Empleados
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                          <label for="name">Nombre</label>
+                          <input type="text"
+                          x-model="name"
+                          x-ref="name"
+                           name="name" id="name" class="form-control" placeholder="escrive nombre del empleado" aria-describedby="helpId">
+                          <small id="helpId" class="text-muted">escribe un nombre del empleado</small>
+                        </div>
+                        <div class="form-group">
+                          <label for="correo">Correo</label>
+                          <input type="text" 
+                          x-model="correo"
+                          x-ref="correo"
+                          name="correo" id="correo" class="form-control" placeholder="escribe el correo electronico" aria-describedby="helpId">
+                          <small id="helpId" class="text-muted">escribe el correo del empleado</small>
+                        </div>
+                        <div class="btn-group" role="group" aria-label="">
+                            <button type="button" x-ref="btnAdd" class="btn btn-success" x-on:click="accion()">Agregar</button>
+                            <button type="button" x-ref="btnUpdate" class="btn btn-warning" x-on:click="modificar()">Modificar</button>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        Footer
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <br>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>nombre</th>
+                            <th>correo</th>
+                            <th>Accioines</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-if="flagdata" x-for="item in users" :key="item._id">
+                        <tr>
+                            <td x-text="item._id">13</td>
+                            <td x-text="item.nombre">rolas</td>
+                            <td x-text="item.correo">rodaft2@gmail.com</td>
+                            <td>
+                                <div class="btn-group" role="group" aria-label="">
+                                    <button type="button" class="btn btn-info" x-on:click="select(item)">seleccionar</button>
+                                    <button type="button" class="btn btn-danger" x-on:click="borrar(item)">borrar</button>
+                                </div>
+                            </td>
+                        </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function crudAlpine(){
+            return{
+                name:"",
+                correo:"",
+                url:"https://crudcrud.com/api/917b8514138e45ca9c51cb13dc18101d/user",
+                users:[],
+                flagdata:false,
+                iniciar:function(){
+                    console.log("init")
+                    this.read();
+                    this.$refs.btnAdd.disabled=false;
+                    this.$refs.btnUpdate.disabled=true;
+                    this.name="";
+                    this.correo="";
+                    this.$watch('name',()=>{
+                        this.$refs.name.classList.remove('is-invalid')})
+                    this.$watch('correo',()=>{
+                        this.$refs.correo.classList.remove('is-invalid')})
+                },
+                lanzapeticion:function(opUrl,dta){
+                    fetch(this.url+opUrl,dta).
+                    then((datosRecividos)=>{
+                        this.iniciar();
+                    }).
+                    catch(console.log);
+                },
+                accion:function(){
+                    console.log("ADD");
+                    if(this.validar()){
+                    var sendData={method:"POST",body:JSON.stringify({nombre:this.name,correo:this.correo}),headers:{'Accept': 'application/json','Content-Type': 'application/json'}};
+                    this.lanzapeticion('',sendData);
+                    }
+                },
+                borrar:function(Duser){
+                    console.log("DELETE");
+                    var metadata={method:"DELETE",headers:{'Accept': 'application/json'}};
+                    this.lanzapeticion("/"+Duser._id,metadata);
+                },
+                read:function(){
+                    console.log("READ");
+                    fetch(this.url).
+                    then(r => r.json()).
+                    then((datosRecividos)=>{
+                        this.flagdata=(datosRecividos[0]._id!=undefined)
+                        if(this.flagdata){
+                        this.users=datosRecividos;
+                        }
+                    }).
+                    catch(console.log);
+                },
+                select:function(selecUser){
+                    this.$refs.btnAdd.disabled=true;
+                    this.$refs.btnUpdate.disabled=false;
+                    this.name=selecUser.nombre;
+                    this.correo=selecUser.correo;
+                    this.id=selecUser._id;
+                },
+                modificar:function(){                    
+                    console.log("UPDATE");
+                    if(this.validar()){
+                    var updateData={method:"PUT",body:JSON.stringify({nombre:this.name,correo:this.correo}),headers:{'Accept': 'application/json','Content-Type': 'application/json'}};
+                    this.lanzapeticion("/"+this.id,updateData);
+                    }
+                },
+                validar:function(){
+                    if((this.name.length)&&(this.correo.length)){
+                        return true
+                    }else{
+                        this.$refs.name.classList.add('is-invalid')
+                        this.$refs.correo.classList.add('is-invalid')
+                        return false
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
